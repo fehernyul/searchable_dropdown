@@ -1,8 +1,11 @@
+import 'package:dropdown_search/dropdown_search.dart';
+import 'package:dropdown_search/src/widgets/custom_inkwell.dart';
 import 'package:flutter/material.dart';
 
-typedef Widget WidgetCheckBox(BuildContext context, bool isChecked);
+typedef WidgetCheckBox = Widget Function(BuildContext context, bool isChecked);
 
 class CheckBoxWidget extends StatefulWidget {
+  final ClickProps clickProps;
   final WidgetCheckBox? layout;
   final WidgetCheckBox? checkBox;
   final bool isChecked;
@@ -12,7 +15,8 @@ class CheckBoxWidget extends StatefulWidget {
   final TextDirection textDirection;
 
   CheckBoxWidget({
-    Key? key,
+    super.key,
+    required this.clickProps,
     this.isChecked = false,
     this.isDisabled = false,
     this.layout,
@@ -20,10 +24,10 @@ class CheckBoxWidget extends StatefulWidget {
     this.interceptCallBacks = false,
     this.textDirection = TextDirection.ltr,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
-  _CheckBoxWidgetState createState() => _CheckBoxWidgetState();
+  State<CheckBoxWidget> createState() => _CheckBoxWidgetState();
 }
 
 class _CheckBoxWidgetState extends State<CheckBoxWidget> {
@@ -38,7 +42,9 @@ class _CheckBoxWidgetState extends State<CheckBoxWidget> {
   @override
   void didUpdateWidget(covariant CheckBoxWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isChecked != oldWidget.isChecked) isCheckedNotifier.value = widget.isChecked;
+    if (widget.isChecked != oldWidget.isChecked) {
+      isCheckedNotifier.value = widget.isChecked;
+    }
   }
 
   @override
@@ -51,25 +57,30 @@ class _CheckBoxWidgetState extends State<CheckBoxWidget> {
           var w = Row(
             mainAxisSize: MainAxisSize.max,
             children: [
-              widget.layout != null ? Expanded(child: widget.layout!(context, v == true)) : Container(),
+              widget.layout != null
+                  ? Expanded(child: widget.layout!(context, v == true))
+                  : SizedBox.shrink(),
               widget.checkBox != null
                   ? widget.checkBox!(context, v == true)
-                  : Checkbox(value: v, onChanged: widget.isDisabled ? null : (b) {}),
+                  : Checkbox(
+                      value: v, onChanged: widget.isDisabled ? null : (b) {}),
             ],
           );
 
-          if (widget.interceptCallBacks)
+          if (widget.interceptCallBacks) {
             return w;
-          else
-            return InkWell(
+          } else {
+            return CustomInkWell(
+              clickProps: widget.clickProps,
               onTap: widget.isDisabled
                   ? null
                   : () {
                       isCheckedNotifier.value = !v;
                       if (widget.onChanged != null) widget.onChanged!(v);
                     },
-              child: IgnorePointer(child: w),
+              child: IgnorePointer(child: ExcludeFocus(child: w)),
             );
+          }
         },
       ),
     );

@@ -3,12 +3,13 @@ import 'package:flutter/material.dart';
 import '../../dropdown_search.dart';
 
 class PopupProps<T> {
-  ///popup title
+  /// popup title
   final Widget? title;
 
-  ///the search box will be shown if true, hidden otherwise
+  /// the search box will be shown if true, hidden otherwise
   final bool showSearchBox;
 
+  /// custom UI for the item
   final DropdownSearchPopupItemBuilder<T>? itemBuilder;
 
   /// object that passes all props to search field
@@ -21,8 +22,8 @@ class PopupProps<T> {
   final ScrollbarProps scrollbarProps;
 
   /// callback executed before applying value change
-  ///delay before searching, change it to Duration(milliseconds: 0)
-  ///if you do not use online search
+  /// delay before searching, change it to Duration(milliseconds: 0)
+  /// if you do not use online search
   final Duration searchDelay;
 
   ///called when popup is dismissed
@@ -42,16 +43,24 @@ class PopupProps<T> {
   final DropdownSearchPopupItemEnabled<T>? disabledItemFn;
 
   ///popup mode
-  final Mode mode;
+  final PopupMode mode;
 
   ///select the selected item in the menu/dialog/bottomSheet of items
   final bool showSelectedItems;
 
-  ///true if the filter on items is applied onlie (via API/DB/...)
+  ///false if the filter on items is applied by the plugin
+  ///true if you want to handle by yourself the filtering (data already filtered by DB, API, ....)
+  final bool disableFilter;
+
+  ///true if the filter on items is applied onlie (via API/DB/...) - TVG
   final bool isFilterOnline;
 
-  ///favorite items props
-  final FavoriteItemProps<T> favoriteItemProps;
+  ///if true, once all items are loaded, filtering is applied on cached items (no need to re call the API to get items)
+  ///[cacheItems] and [disableFilter] could not be both true
+  final bool cacheItems;
+
+  ///suggested items props
+  final SuggestedItemProps<T> suggestedItemProps;
 
   ///dialog mode props
   final DialogProps dialogProps;
@@ -79,8 +88,17 @@ class PopupProps<T> {
   ///if true , the callbacks (onTap, onLongClick...) will be handled by the user
   final bool interceptCallBacks;
 
+  ///infinite scroll params like skip (offset), take,...
+  final InfiniteScrollProps? infiniteScrollProps;
+
+  /// called when loading new items
+  final ValueChanged<List<T>>? onItemsLoaded;
+
+  ///properties of click
+  final ClickProps itemClickProps;
+
   const PopupProps._({
-    this.mode = Mode.MENU,
+    this.mode = PopupMode.menu,
     this.fit = FlexFit.tight,
     this.title,
     this.showSearchBox = false,
@@ -91,7 +109,7 @@ class PopupProps<T> {
     this.searchFieldProps = const TextFieldProps(),
     this.scrollbarProps = const ScrollbarProps(),
     this.listViewProps = const ListViewProps(),
-    this.favoriteItemProps = const FavoriteItemProps(),
+    this.suggestedItemProps = const SuggestedItemProps(),
     this.searchDelay = const Duration(seconds: 1),
     this.onDismissed,
     this.emptyBuilder,
@@ -100,11 +118,16 @@ class PopupProps<T> {
     this.loadingBuilder,
     this.showSelectedItems = false,
     this.disabledItemFn,
+    this.disableFilter = false,
     this.isFilterOnline = false,
+    this.cacheItems = false,
     this.containerBuilder,
     this.constraints = const BoxConstraints(),
     this.interceptCallBacks = false,
-  });
+    this.infiniteScrollProps,
+    this.onItemsLoaded,
+    this.itemClickProps = const ClickProps(),
+  }) : assert(infiniteScrollProps == null || disableFilter);
 
   const PopupProps.menu({
     this.title,
@@ -114,7 +137,7 @@ class PopupProps<T> {
     this.searchFieldProps = const TextFieldProps(),
     this.scrollbarProps = const ScrollbarProps(),
     this.listViewProps = const ListViewProps(),
-    this.favoriteItemProps = const FavoriteItemProps(),
+    this.suggestedItemProps = const SuggestedItemProps(),
     this.searchDelay = const Duration(seconds: 1),
     this.onDismissed,
     this.emptyBuilder,
@@ -123,14 +146,19 @@ class PopupProps<T> {
     this.loadingBuilder,
     this.showSelectedItems = false,
     this.disabledItemFn,
-    this.isFilterOnline = false,
+    this.disableFilter = false,
+    this.isFilterOnline = false, // TVG
+    this.cacheItems = false,
     this.containerBuilder,
     this.constraints = const BoxConstraints(maxHeight: 350),
     this.interceptCallBacks = false,
-  })  : this.mode = Mode.MENU,
-        this.bottomSheetProps = const BottomSheetProps(),
-        this.dialogProps = const DialogProps(),
-        this.modalBottomSheetProps = const ModalBottomSheetProps();
+    this.infiniteScrollProps,
+    this.onItemsLoaded,
+    this.itemClickProps = const ClickProps(),
+  })  : mode = PopupMode.menu,
+        bottomSheetProps = const BottomSheetProps(),
+        dialogProps = const DialogProps(),
+        modalBottomSheetProps = const ModalBottomSheetProps();
 
   const PopupProps.dialog({
     this.fit = FlexFit.tight,
@@ -140,7 +168,7 @@ class PopupProps<T> {
     this.searchFieldProps = const TextFieldProps(),
     this.scrollbarProps = const ScrollbarProps(),
     this.listViewProps = const ListViewProps(),
-    this.favoriteItemProps = const FavoriteItemProps(),
+    this.suggestedItemProps = const SuggestedItemProps(),
     this.searchDelay = const Duration(seconds: 1),
     this.onDismissed,
     this.emptyBuilder,
@@ -149,7 +177,9 @@ class PopupProps<T> {
     this.loadingBuilder,
     this.showSelectedItems = false,
     this.disabledItemFn,
-    this.isFilterOnline = false,
+    this.disableFilter = false,
+    this.isFilterOnline = false, // TVG
+    this.cacheItems = false,
     this.containerBuilder,
     this.constraints = const BoxConstraints(
       minWidth: 500,
@@ -157,10 +187,13 @@ class PopupProps<T> {
       maxHeight: 600,
     ),
     this.interceptCallBacks = false,
-  })  : this.mode = Mode.DIALOG,
-        this.menuProps = const MenuProps(),
-        this.bottomSheetProps = const BottomSheetProps(),
-        this.modalBottomSheetProps = const ModalBottomSheetProps();
+    this.infiniteScrollProps,
+    this.onItemsLoaded,
+    this.itemClickProps = const ClickProps(),
+  })  : mode = PopupMode.dialog,
+        menuProps = const MenuProps(),
+        bottomSheetProps = const BottomSheetProps(),
+        modalBottomSheetProps = const ModalBottomSheetProps();
 
   const PopupProps.bottomSheet({
     this.fit = FlexFit.tight,
@@ -170,7 +203,7 @@ class PopupProps<T> {
     this.searchFieldProps = const TextFieldProps(),
     this.scrollbarProps = const ScrollbarProps(),
     this.listViewProps = const ListViewProps(),
-    this.favoriteItemProps = const FavoriteItemProps(),
+    this.suggestedItemProps = const SuggestedItemProps(),
     this.searchDelay = const Duration(seconds: 1),
     this.onDismissed,
     this.emptyBuilder,
@@ -179,14 +212,19 @@ class PopupProps<T> {
     this.loadingBuilder,
     this.showSelectedItems = false,
     this.disabledItemFn,
-    this.isFilterOnline = false,
+    this.disableFilter = false,
+    this.isFilterOnline = false, // TVG
+    this.cacheItems = false,
     this.containerBuilder,
     this.constraints = const BoxConstraints(maxHeight: 500),
     this.interceptCallBacks = false,
-  })  : this.mode = Mode.BOTTOM_SHEET,
-        this.menuProps = const MenuProps(),
-        this.dialogProps = const DialogProps(),
-        this.modalBottomSheetProps = const ModalBottomSheetProps();
+    this.infiniteScrollProps,
+    this.onItemsLoaded,
+    this.itemClickProps = const ClickProps(),
+  })  : mode = PopupMode.bottomSheet,
+        menuProps = const MenuProps(),
+        dialogProps = const DialogProps(),
+        modalBottomSheetProps = const ModalBottomSheetProps();
 
   const PopupProps.modalBottomSheet({
     this.title,
@@ -196,7 +234,7 @@ class PopupProps<T> {
     this.searchFieldProps = const TextFieldProps(),
     this.scrollbarProps = const ScrollbarProps(),
     this.listViewProps = const ListViewProps(),
-    this.favoriteItemProps = const FavoriteItemProps(),
+    this.suggestedItemProps = const SuggestedItemProps(),
     this.searchDelay = const Duration(seconds: 1),
     this.onDismissed,
     this.emptyBuilder,
@@ -205,14 +243,19 @@ class PopupProps<T> {
     this.loadingBuilder,
     this.showSelectedItems = false,
     this.disabledItemFn,
-    this.isFilterOnline = false,
+    this.disableFilter = false,
+    this.isFilterOnline = false, // TVG
+    this.cacheItems = false,
     this.containerBuilder,
     this.constraints = const BoxConstraints(maxHeight: 500),
     this.interceptCallBacks = false,
-  })  : this.mode = Mode.MODAL_BOTTOM_SHEET,
-        this.menuProps = const MenuProps(),
-        this.dialogProps = const DialogProps(),
-        this.bottomSheetProps = const BottomSheetProps();
+    this.infiniteScrollProps,
+    this.onItemsLoaded,
+    this.itemClickProps = const ClickProps(),
+  })  : mode = PopupMode.modalBottomSheet,
+        menuProps = const MenuProps(),
+        dialogProps = const DialogProps(),
+        bottomSheetProps = const BottomSheetProps();
 }
 
 class PopupPropsMultiSelection<T> extends PopupProps<T> {
@@ -223,23 +266,25 @@ class PopupPropsMultiSelection<T> extends PopupProps<T> {
   final OnItemRemoved<T>? onItemRemoved;
 
   ///widget used to show checked items in multiSelection mode
-  final DropdownSearchPopupItemBuilder<T>? selectionWidget;
+  final DropdownSearchPopupItemBuilder<T>? checkBoxBuilder;
 
   ///widget used to validate items in multiSelection mode
-  final ValidationMultiSelectionBuilder<T>? validationWidgetBuilder;
+  final ValidationMultiSelectionBuilder<T>? validationBuilder;
 
   final TextDirection textDirection;
 
   const PopupPropsMultiSelection._({
-    super.mode = Mode.MENU,
+    super.mode = PopupMode.menu,
     super.fit = FlexFit.tight,
     super.title,
-    super.isFilterOnline,
+    super.disableFilter,
+    super.cacheItems,
     super.itemBuilder,
     super.disabledItemFn,
+    super.isFilterOnline, // TVG
     super.showSearchBox,
     super.searchFieldProps = const TextFieldProps(),
-    super.favoriteItemProps = const FavoriteItemProps(),
+    super.suggestedItemProps = const SuggestedItemProps(),
     super.modalBottomSheetProps = const ModalBottomSheetProps(),
     super.scrollbarProps = const ScrollbarProps(),
     super.listViewProps = const ListViewProps(),
@@ -255,10 +300,13 @@ class PopupPropsMultiSelection<T> extends PopupProps<T> {
     super.containerBuilder,
     super.constraints = const BoxConstraints(maxHeight: 350),
     super.interceptCallBacks = false,
+    super.infiniteScrollProps,
+    super.onItemsLoaded,
+    super.itemClickProps,
     this.onItemAdded,
     this.onItemRemoved,
-    this.selectionWidget,
-    this.validationWidgetBuilder,
+    this.checkBoxBuilder,
+    this.validationBuilder,
     this.textDirection = TextDirection.ltr,
   }) : super._();
 
@@ -268,7 +316,7 @@ class PopupPropsMultiSelection<T> extends PopupProps<T> {
     super.showSearchBox = false,
     super.searchFieldProps = const TextFieldProps(),
     super.menuProps = const MenuProps(),
-    super.favoriteItemProps = const FavoriteItemProps(),
+    super.suggestedItemProps = const SuggestedItemProps(),
     super.scrollbarProps = const ScrollbarProps(),
     super.listViewProps = const ListViewProps(),
     super.searchDelay,
@@ -279,14 +327,19 @@ class PopupPropsMultiSelection<T> extends PopupProps<T> {
     super.loadingBuilder,
     super.showSelectedItems = false,
     super.disabledItemFn,
-    super.isFilterOnline = false,
+    super.disableFilter = false,
+    super.isFilterOnline = false, // TVG
+    super.cacheItems = false,
     super.containerBuilder,
     super.constraints = const BoxConstraints(maxHeight: 350),
     super.interceptCallBacks = false,
+    super.infiniteScrollProps,
+    super.onItemsLoaded,
+    super.itemClickProps,
     this.onItemAdded,
     this.onItemRemoved,
-    this.selectionWidget,
-    this.validationWidgetBuilder,
+    this.checkBoxBuilder,
+    this.validationBuilder,
     this.textDirection = TextDirection.ltr,
   }) : super.menu();
 
@@ -297,7 +350,7 @@ class PopupPropsMultiSelection<T> extends PopupProps<T> {
     super.searchFieldProps = const TextFieldProps(),
     super.scrollbarProps = const ScrollbarProps(),
     super.listViewProps = const ListViewProps(),
-    super.favoriteItemProps = const FavoriteItemProps(),
+    super.suggestedItemProps = const SuggestedItemProps(),
     super.dialogProps = const DialogProps(),
     super.searchDelay,
     super.onDismissed,
@@ -307,7 +360,9 @@ class PopupPropsMultiSelection<T> extends PopupProps<T> {
     super.loadingBuilder,
     super.showSelectedItems = false,
     super.disabledItemFn,
-    super.isFilterOnline = false,
+    super.disableFilter = false,
+    super.isFilterOnline = false, // TVG
+    super.cacheItems = false,
     super.containerBuilder,
     super.constraints = const BoxConstraints(
       minWidth: 500,
@@ -315,10 +370,13 @@ class PopupPropsMultiSelection<T> extends PopupProps<T> {
       maxHeight: 600,
     ),
     super.interceptCallBacks = false,
+    super.infiniteScrollProps,
+    super.onItemsLoaded,
+    super.itemClickProps,
     this.onItemAdded,
     this.onItemRemoved,
-    this.selectionWidget,
-    this.validationWidgetBuilder,
+    this.checkBoxBuilder,
+    this.validationBuilder,
     this.textDirection = TextDirection.ltr,
   }) : super.dialog();
 
@@ -328,7 +386,7 @@ class PopupPropsMultiSelection<T> extends PopupProps<T> {
     super.showSearchBox = false,
     super.searchFieldProps = const TextFieldProps(),
     super.listViewProps = const ListViewProps(),
-    super.favoriteItemProps = const FavoriteItemProps(),
+    super.suggestedItemProps = const SuggestedItemProps(),
     super.bottomSheetProps = const BottomSheetProps(),
     super.scrollbarProps = const ScrollbarProps(),
     super.searchDelay,
@@ -339,26 +397,33 @@ class PopupPropsMultiSelection<T> extends PopupProps<T> {
     super.loadingBuilder,
     super.showSelectedItems = false,
     super.disabledItemFn,
-    super.isFilterOnline = false,
+    super.disableFilter = false,
+    super.isFilterOnline = false, // TVG
+    super.cacheItems = false,
     super.containerBuilder,
     super.constraints = const BoxConstraints(maxHeight: 500),
     super.interceptCallBacks = false,
+    super.infiniteScrollProps,
+    super.onItemsLoaded,
+    super.itemClickProps,
     this.onItemAdded,
     this.onItemRemoved,
-    this.selectionWidget,
-    this.validationWidgetBuilder,
+    this.checkBoxBuilder,
+    this.validationBuilder,
     this.textDirection = TextDirection.ltr,
   }) : super.bottomSheet();
 
   const PopupPropsMultiSelection.modalBottomSheet({
     super.title,
-    super.isFilterOnline,
+    super.disableFilter,
+    super.cacheItems,
     super.fit = FlexFit.tight,
     super.itemBuilder,
     super.disabledItemFn,
+    super.isFilterOnline, // TVG
     super.showSearchBox,
     super.searchFieldProps = const TextFieldProps(),
-    super.favoriteItemProps = const FavoriteItemProps(),
+    super.suggestedItemProps = const SuggestedItemProps(),
     super.modalBottomSheetProps = const ModalBottomSheetProps(),
     super.scrollbarProps = const ScrollbarProps(),
     super.listViewProps = const ListViewProps(),
@@ -371,10 +436,13 @@ class PopupPropsMultiSelection<T> extends PopupProps<T> {
     super.containerBuilder,
     super.constraints = const BoxConstraints(maxHeight: 500),
     super.interceptCallBacks = false,
+    super.infiniteScrollProps,
+    super.onItemsLoaded,
+    super.itemClickProps,
     this.onItemAdded,
     this.onItemRemoved,
-    this.selectionWidget,
-    this.validationWidgetBuilder,
+    this.checkBoxBuilder,
+    this.validationBuilder,
     this.textDirection = TextDirection.ltr,
   }) : super.modalBottomSheet();
 
@@ -382,11 +450,13 @@ class PopupPropsMultiSelection<T> extends PopupProps<T> {
       : this._(
           title: popupProps.title,
           fit: popupProps.fit,
-          favoriteItemProps: popupProps.favoriteItemProps,
+          suggestedItemProps: popupProps.suggestedItemProps,
           disabledItemFn: popupProps.disabledItemFn,
           emptyBuilder: popupProps.emptyBuilder,
           errorBuilder: popupProps.errorBuilder,
-          isFilterOnline: popupProps.isFilterOnline,
+          disableFilter: popupProps.disableFilter,
+          isFilterOnline: popupProps.isFilterOnline, // TVG
+          cacheItems: popupProps.cacheItems,
           itemBuilder: popupProps.itemBuilder,
           listViewProps: popupProps.listViewProps,
           loadingBuilder: popupProps.loadingBuilder,
@@ -404,10 +474,13 @@ class PopupPropsMultiSelection<T> extends PopupProps<T> {
           containerBuilder: popupProps.containerBuilder,
           constraints: popupProps.constraints,
           interceptCallBacks: popupProps.interceptCallBacks,
+          textDirection: TextDirection.ltr,
+          infiniteScrollProps: popupProps.infiniteScrollProps,
+          onItemsLoaded: popupProps.onItemsLoaded,
+          itemClickProps: popupProps.itemClickProps,
           onItemAdded: null,
           onItemRemoved: null,
-          selectionWidget: null,
-          validationWidgetBuilder: null,
-          textDirection: TextDirection.ltr,
+          checkBoxBuilder: null,
+          validationBuilder: null,
         );
 }
