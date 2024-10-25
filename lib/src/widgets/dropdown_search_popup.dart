@@ -556,7 +556,6 @@ class DropdownSearchPopupState<T> extends State<DropdownSearchPopup<T>> {
                       CallbackShortcuts(
                       bindings: <ShortcutActivator, VoidCallback>{
                         const SingleActivator(LogicalKeyboardKey.arrowDown): () {
-                            FocusScope.of(context).nextFocus(); //jump delete button
                             FocusScope.of(context).nextFocus(); //jump first element
                         },
                       },
