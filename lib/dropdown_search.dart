@@ -464,7 +464,7 @@ class DropdownSearchState<T> extends State<DropdownSearch<T>> {
                 isFocused: isFocused,
                 expands: widget.decoratorProps.expands,
                 isHovering: widget.decoratorProps.isHovering,
-                decoration: _manageDropdownDecoration(state),
+                decoration:  _manageDropdownDecoration(state), //erre még szükség van?
                 child: _defaultSelectedItemWidget(),
               );
             });
@@ -498,7 +498,7 @@ class DropdownSearchState<T> extends State<DropdownSearch<T>> {
                 expands: widget.decoratorProps.expands,
                 isHovering: widget.decoratorProps.isHovering,
                 isFocused: isFocused,
-                decoration: _manageDropdownDecoration(state),
+                decoration: _manageDropdownDecoration(state), //erre még szükség van??
                 child: _defaultSelectedItemWidget(),
               );
             });
@@ -508,12 +508,21 @@ class DropdownSearchState<T> extends State<DropdownSearch<T>> {
 
   ///manage dropdownSearch field decoration
   InputDecoration _manageDropdownDecoration(FormFieldState state) {
+    bool filled = false;
+    if (this.isFocused && widget.focusedColor != null) {
+      filled = true;
+    }
+    if (filled==false) {
+      if ((widget.decoratorProps.isHovering) &&  (widget.decoratorProps.decoration.hoverColor !=null)) {
+        filled = true;
+      }
+    }
+
     return widget.decoratorProps.decoration
         .applyDefaults(Theme.of(state.context).inputDecorationTheme)
         .copyWith(
           fillColor: widget.focusedColor, // TVG
-          filled: widget.focusedColor != null ? this.isFocused : null, // TVG
-
+          filled:  filled,
           enabled: widget.enabled,
           suffixIcon: _manageSuffixIcons(),
           errorText: state.errorText,
