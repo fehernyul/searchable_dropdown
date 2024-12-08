@@ -45,7 +45,42 @@ class ScrollbarProps {
     this.notificationPredicate = defaultScrollNotificationPredicate,
     this.padding = EdgeInsets.zero,
   });
+
+  // TVG - begin
+  //  ScrollbarProps készítése a Flutteres ScrollbarThemeData sok property-je alapján, és , ami abban nincs benne, azokat egyesével külön bekéri
+  ScrollbarProps createFromScrollbarTheme({
+    required ScrollbarThemeData scrollbarThemeData, // ez a típus jön a Flutterből
+    ScrollbarOrientation? scrollbarOrientation,
+    EdgeInsets? padding = EdgeInsets.zero,
+    ScrollNotificationPredicate notificationPredicate = defaultScrollNotificationPredicate,
+    Duration? fadeDuration,
+    Duration? timeToFade,
+    Duration? pressDuration = Duration.zero,
+    double? minOverscrollLength,
+  }) {
+    return ScrollbarProps(
+      scrollbarOrientation: scrollbarOrientation,
+      fadeDuration: fadeDuration ?? Duration(milliseconds: 300),
+      timeToFade: timeToFade ?? Duration(milliseconds: 600),
+      notificationPredicate: notificationPredicate,
+      minOverscrollLength: minOverscrollLength,
+      radius: scrollbarThemeData.radius,
+      trackRadius: scrollbarThemeData.radius,
+      padding: padding,
+      interactive: scrollbarThemeData.interactive,
+      mainAxisMargin: scrollbarThemeData.mainAxisMargin ?? 0.0,
+      crossAxisMargin: scrollbarThemeData.crossAxisMargin ?? 0.0,
+      trackBorderColor: scrollbarThemeData.trackBorderColor?.resolve(<WidgetState>{}) ?? Colors.black,
+      trackColor: scrollbarThemeData.trackColor?.resolve(<WidgetState>{}) ?? Colors.black,
+      thumbColor: scrollbarThemeData.thumbColor?.resolve(<WidgetState>{}) ?? Colors.black,
+      minThumbLength: scrollbarThemeData.minThumbLength ?? 18,
+      trackVisibility: scrollbarThemeData.trackVisibility?.resolve(<WidgetState>{}),
+      thumbVisibility: scrollbarThemeData.thumbVisibility?.resolve(<WidgetState>{}),
+      thickness: scrollbarThemeData.thickness?.resolve(<WidgetState>{}),
+    );
+  }
 }
+// TVG - end
 
 bool defaultScrollNotificationPredicate(ScrollNotification notification) {
   return notification.depth == 0;
