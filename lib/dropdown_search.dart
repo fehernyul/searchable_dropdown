@@ -38,12 +38,21 @@ typedef DropdownSearchOnFind<T> = FutureOr<List<T>> Function(
 typedef DropdownSearchItemAsString<T> = String Function(T item);
 typedef DropdownSearchFilterFn<T> = bool Function(T item, String filter);
 typedef DropdownSearchCompareFn<T> = bool Function(T item1, T item2);
+// TODO DropdownSearchBuilder-be is kell ez:
+// bool isDisabled,
+// bool isSelected,
+// bool isHovered
+
 typedef DropdownSearchBuilder<T> = Widget Function(
     BuildContext context, T? selectedItem);
 typedef DropdownSearchBuilderMultiSelection<T> = Widget Function(
     BuildContext context, List<T> selectedItems);
 typedef DropdownSearchPopupItemBuilder<T> = Widget Function(
-    BuildContext context, T item, bool isDisabled, bool isSelected);
+    BuildContext context,
+    T item,
+    bool isDisabled,
+    bool isSelected,
+    bool isHovered);
 typedef DropdownSearchPopupItemEnabled<T> = bool Function(T item);
 typedef ErrorBuilder<T> = Widget Function(
     BuildContext context, String searchEntry, dynamic exception);
@@ -464,7 +473,8 @@ class DropdownSearchState<T> extends State<DropdownSearch<T>> {
                 isFocused: isFocused,
                 expands: widget.decoratorProps.expands,
                 isHovering: widget.decoratorProps.isHovering,
-                decoration:  _manageDropdownDecoration(state), //erre még szükség van?
+                decoration:
+                    _manageDropdownDecoration(state), //erre még szükség van?
                 child: _defaultSelectedItemWidget(),
               );
             });
@@ -498,7 +508,8 @@ class DropdownSearchState<T> extends State<DropdownSearch<T>> {
                 expands: widget.decoratorProps.expands,
                 isHovering: widget.decoratorProps.isHovering,
                 isFocused: isFocused,
-                decoration: _manageDropdownDecoration(state), //erre még szükség van??
+                decoration:
+                    _manageDropdownDecoration(state), //erre még szükség van??
                 child: _defaultSelectedItemWidget(),
               );
             });
@@ -512,8 +523,9 @@ class DropdownSearchState<T> extends State<DropdownSearch<T>> {
     if (this.isFocused && widget.focusedColor != null) {
       filled = true;
     }
-    if (filled==false) {
-      if ((widget.decoratorProps.isHovering) &&  (widget.decoratorProps.decoration.hoverColor !=null)) {
+    if (filled == false) {
+      if ((widget.decoratorProps.isHovering) &&
+          (widget.decoratorProps.decoration.hoverColor != null)) {
         filled = true;
       }
     }
@@ -522,7 +534,7 @@ class DropdownSearchState<T> extends State<DropdownSearch<T>> {
         .applyDefaults(Theme.of(state.context).inputDecorationTheme)
         .copyWith(
           fillColor: widget.focusedColor, // TVG
-          filled:  filled,
+          filled: filled,
           enabled: widget.enabled,
           suffixIcon: _manageSuffixIcons(),
           errorText: state.errorText,
