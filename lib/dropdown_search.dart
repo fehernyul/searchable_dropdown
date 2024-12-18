@@ -173,9 +173,6 @@ class DropdownSearch<T> extends StatefulWidget {
   /// opens the search list when press a letter on the physical keyboard - TVG
   final bool openSearchListOnLetterKeyDown;
 
-  /// fill backgound with this color when focused - TVG
-  final Color? focusedColor;
-
   ///a callBack will be called before opening le popup
   ///if the callBack return FALSE, the opening of the popup will be cancelled
   final BeforePopupOpeningMultiSelection<T>? onBeforePopupOpeningMultiSelection;
@@ -199,7 +196,6 @@ class DropdownSearch<T> extends StatefulWidget {
     this.onBeforeChange,
     this.onBeforePopupOpening,
     this.openSearchListOnLetterKeyDown = false, // TVG
-    this.focusedColor, // TVG
     PopupProps<T> popupProps = const PopupProps.menu(),
     //form properties
     this.onSaved,
@@ -244,7 +240,6 @@ class DropdownSearch<T> extends StatefulWidget {
     this.selectedItems = const [],
     this.popupProps = const PopupPropsMultiSelection.menu(),
     this.openSearchListOnLetterKeyDown = false,
-    this.focusedColor,
     this.selectedItemsScrollProps,
     ValueChanged<List<T>>? onChanged,
     BeforeChangeMultiSelection<T>? onBeforeChange,
@@ -473,8 +468,7 @@ class DropdownSearchState<T> extends State<DropdownSearch<T>> {
                 isFocused: isFocused,
                 expands: widget.decoratorProps.expands,
                 isHovering: widget.decoratorProps.isHovering,
-                decoration:
-                    _manageDropdownDecoration(state), //erre még szükség van?
+                decoration:  _manageDropdownDecoration(state), //isFocus
                 child: _defaultSelectedItemWidget(),
               );
             });
@@ -519,22 +513,10 @@ class DropdownSearchState<T> extends State<DropdownSearch<T>> {
 
   ///manage dropdownSearch field decoration
   InputDecoration _manageDropdownDecoration(FormFieldState state) {
-    bool filled = false;
-    if (this.isFocused && widget.focusedColor != null) {
-      filled = true;
-    }
-    if (filled == false) {
-      if ((widget.decoratorProps.isHovering) &&
-          (widget.decoratorProps.decoration.hoverColor != null)) {
-        filled = true;
-      }
-    }
-
     return widget.decoratorProps.decoration
         .applyDefaults(Theme.of(state.context).inputDecorationTheme)
         .copyWith(
-          fillColor: widget.focusedColor, // TVG
-          filled: filled,
+          fillColor:  this.isFocused ? widget.decoratorProps.decoration.focusColor : widget.decoratorProps.decoration.fillColor,
           enabled: widget.enabled,
           suffixIcon: _manageSuffixIcons(),
           errorText: state.errorText,
